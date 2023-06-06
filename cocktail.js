@@ -401,77 +401,6 @@ export function component({ type, attr, events, style, $for, push, content, chil
   return el;
 }
 
-let myComponent = component({
-  type: 'section',
-  attr: {
-    class: "parent",
-    id: "parent"
-  },
-  content: 'Welcome in first test',
-  events: {
-    click: (ev) => { console.log(ev) },
-    input: (ev) => { console.log(ev); }
-  },
-  //children
-  children: {
-    child1: {
-      type: 'div',
-      attr: { class: "child1" },
-      content: component({
-        type: 'div', attr: { class: "nestedChild" }, children: {
-          child1: { type: "div", attr: { class: "nestdNestedChild" }, content: "welcome bro" }
-        },
-      }),
-      repeat: 4,
-      events: {
-        mousemove: (ev) => { console.log(true); }
-      }
-    },
-    child2: {
-      type: 'div',
-      attr: { class: "child2" },
-      content: component({
-        type: 'div', attr: { class: "nestedChild2" }, children: {
-          child1: { type: "div", attr: { class: "nestdNestedChild2" }, content: "welcome bro2" }
-        },
-      }),
-      repeat: 4,
-    },
-    child3: {
-      type: 'ul',
-      attr: { class: "many-items", id: "k=list" },
-      $for: { loop: 4, type: 'li', attr: { class: ['i1', 'i2', 'i3', 'i4'], id: ['i1', 'i2', 'i3', 'i4'] }, content: ['welcom1', 'welcome2', 'welcome3', 'welcome4'] }
-    }
-  }
-});
-
-let my2comp = component({
-  $for: { loop: 4, type: 'li', attr: { class: ['li1', 'li1', 'li3'] }, content: ['well1', 'well2', 'well3', 'well4'] },
-  children: {
-    ch1: {
-      type: 'h1',
-      attr: { class: 'h1c2', id: 'h1c2' },
-      content: 'h1c2',
-      repeat: 3
-    }
-  }
-})
-
-let my3comp = component({
-  push: {
-    types: ['h1', 'div', 'section'],
-    attrs: {
-      class: ['h1', 'div', 'section'],
-      id: ['h1', 'div', 'section']
-    },
-    contents: ['hello h1', 'hello div', 'hello section']
-  }
-})
-
-console.log(myComponent);
-console.log(my2comp);
-console.log(my3comp);
-
 
 //set render function to render component
 export class Render {
@@ -887,34 +816,6 @@ export class CocktailDB {
     return methods
   }
 }
-let i = 0;
 
-async function testDB() {
-  let db = new CocktailDB('db');
-  let coll = await db.createCollction('users')
-  let coll2 = await db.createCollction('msgs')
-  // coll.set({ id: '1', name: 'yousef', age: 21 });
-  // let i = 2;
-  // coll.findOneAndUpdate({ id: '1', name: 'yousef', age: 25 },2)
-  console.log(await coll.findOne({ age: 21 }))
-  console.log(await coll.findOne({ name: 'yousefSayedNew' }));
-  console.log(await coll.find());
-  // log(coll.findOne())
-  // log(coll.findOne())
-  window.onclick = () => {
-    i++
-    // console.log(i);
-
-    // db.createCollction('msgs' + i, 'id')
-    console.log(coll);
-
-    // coll.set({ name: 'yousefSayedNew', age: 21 });
-    // coll.delete({age:21})
-    // coll.findAndUpdate({ age: 21 }, { name: ' ءآلاء ناصر', age: 'خالدين في الجنه بفبضل الله عز و جل' });
-    // coll.deleteOne({age:22})
-  }
-
-}
-testDB()
 const cocktail = 'Welcome in cocktail library';
 export default cocktail;
