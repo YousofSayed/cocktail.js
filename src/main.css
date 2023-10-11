@@ -4,3 +4,13 @@
 html{
     scroll-behavior: smooth;
 }
+
+#app{
+    height: 100%;
+    display: grid;
+    place-items: center;
+    background-color: #222 !important;
+    color: gold;
+    font-weight: bold;
+    font-size: 22px;
+}

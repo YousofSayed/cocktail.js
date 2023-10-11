@@ -1,7 +1,7 @@
 {
-  "name": "official-versoin-of-cocktail-js",
+  "name": "cocktailjs",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,8 +15,6 @@
     "vite": "^4.4.5"
   },
   "dependencies": {
-    "js-upload-image": "^1.0.6",
-    "lit-html": "^2.8.0",
-    "upload-images-converter": "^2.0.2"
+    "lit-html": "^2.8.0"
   }
 }

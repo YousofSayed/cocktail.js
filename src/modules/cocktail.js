@@ -236,7 +236,7 @@ export function parseToHTML(text = '') {
 
 
 export function useRouter(root = '', routes) {
-  const rgx = /\/(\:)?(\w+)?/ig;
+  const rgx = /(\/)?(\:)?(\w+)?/ig;
   _CocktailRoutes_ = cloneObject(routes);
   console.log(_CocktailRoutes_);
 
@@ -255,24 +255,12 @@ export function useRouter(root = '', routes) {
         if (pathname == route) { return };
         routes['/404'] = !routes[route] && !routes['/404'] ? `404 page not founded..:(` : routes['/404'];
 
-        if (route.match(rgx).length > 1) {
-          Object.keys(routes).forEach(key => {
-            if (key.match(rgx).length <= 1) return;
-            if (key.match(rgx)[0] == route.match(rgx)[0]) {
-              history.pushState(null, null, route);
-              $(root).render(isFunction(routes[key]) ? routes[key]() : routes[key]);
-            }
-          });
-          getAllCa();
-          return;
+        for (const key in routes) {
+          if (key.match(rgx)[0] != route.match(rgx)[0]) {continue; }
+          history.pushState(null, null, route);
+          $(root).render(isFunction(routes[key]) ? routes[key]() : routes[key]);
         }
-
-        if (!routes[route]) {
-          push(root, routes, '/404');
-          getAllCa();
-          return;
-        }
-        push(root, routes, route)
+        
         getAllCa();
       })
     });
@@ -282,19 +270,12 @@ export function useRouter(root = '', routes) {
   function popAndLoadHandler() {
     const { pathname } = location;
     routes['/404'] = !routes[pathname] && !routes['/404'] ? `404 page not founded..:(` : routes['/404'];
-    if (pathname.match(rgx).length > 1) {
-      Object.keys(routes).forEach(key => {
-        if (key.match(rgx).length <= 1) return;
-        if (pathname.match(rgx)[0] == key.match(rgx)[0]) {
-          $(root).render(isFunction(routes[key]) ? routes[key]() : routes[key]);
-        } else { $(root).render(isFunction(routes[key]) ? routes[key]() : routes[key]) }
-      });
+      for (const key in routes) {
+        if (key.match(rgx)[0] != pathname.match(rgx)[0]) {continue; }
+        $(root).render(isFunction(routes[key]) ? routes[key]() : routes[key]);
+      }
       getAllCa();
       return;
-    };
-
-    routes[pathname] ? $(root).render(isFunction(routes[pathname]) ? routes[pathname]() : routes[pathname]) : $(root).render(routes['/404']);
-    getAllCa();
   }
 
   window.addEventListener('popstate', (ev) => {
@@ -315,12 +296,18 @@ export function useParams() {
     const keyMatchs = key.match(rgx), routeMatches = pathname.match(rgx);
     if (keyMatchs[0] != routeMatches[0]) return;
     keyMatchs.forEach((param, i) => {
-      if(i == 0) return; 
-      params[param.replace(/\/(\:)?/ig, '')] = routeMatches[i].replace('/', '');;
+      if (i == 0) return;
+      params[param.replace(/\/(\:)?/ig, '')] = routeMatches[i]?.replace('/', '');;
     });
   });
-  console.log(params);
   return params;
+}
+
+export function useQueries() {
+  const queries = new URLSearchParams(window.location.search);
+  return {
+    get : (name)=>queries.get(name)
+  }
 }
 
 //set render class 
