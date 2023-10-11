@@ -180,117 +180,188 @@ export class MakeMinAndSecInterval {
   }
 };
 
-const _containerOFCocktailEvents_ = {};
-
-
-export function store(data) {
-  return {
-    data,
-    ref: (key) => {
-      return `<span cstoreref>${data[key]}</span>`
-    },
-    commit: (key, newVal) => {
-      data[key] = newVal;
-      const cstorerefEls = document.querySelectorAll('[cstoreref]');
-      cstorerefEls.forEach((cstorerefEl) => {
-        if (cstorerefEl.innerHTML == data[key]) return;
-        cstorerefEl.innerHTML = data[key]
-      })
-    }
-  }
-}
-
-export function useLocalStore(data) {
-  const id = uniqueID();
-  return {
-    data,
-    valueOf:(key)=>{
-      return data[key]
-    },
-    ref: (key) => {
-      return `${data[key]}<template id="${key}${id}">${data[key]}</template>`
-    },
-    commit: (key, newVal) => {
-      const oldVal = data[key];
-      data[key] = newVal;
-      const allEls = document.querySelectorAll(`#${key}${id}`);
-      allEls.forEach((el) => {
-        const parentEl = el.parentElement;
-        const oldInner = el.parentElement.innerHTML;
-        const newInner = oldInner.replace(oldVal, data[key])
-        parentEl.innerHTML = ''
-        parentEl.render(newInner)
-      })
-    }
-  }
-}
-
-//Hooks
-export function useMap(array = [],callback=(e,i)=>{}) {
-  return array.map((e,i)=>{
-    return callback(e,i)
-  }).join('');
-}
 
 //handling Dom
+const _containerOFCocktailEvents_ = {};
+const _containerOFCocktailfunctionAfterRender_ = {};
+let _CocktailRoutes_;
+
+export function useMap(array = [], callback = (e, i) => { }) {
+  return parseToHTML(array.map((e, i) => {
+    return callback(e, i)
+  }).join('')).body.innerHTML;
+}
+
+export function dff(cb = () => { }) {
+  const id = uniqueID();
+  _containerOFCocktailEvents_[id] = cb;
+  return id;
+}
+
+export function insertInBegin(query = '', HTML = '') {
+  const el = document.querySelector(query);
+  HTML = HTML + el.innerHTML;
+  el.render(HTML)
+}
+
+export function insertInEnd(query = '', HTML = '') {
+  const el = document.querySelector(query);
+  HTML = el.innerHTML + HTML;
+  el.render(HTML)
+}
+
+export function commit(query = '', HTML = '') {
+  const els = document.querySelectorAll(query);
+  els.forEach((el) => {
+    el.render(HTML);
+  })
+}
+
+export function commitOne(query = '', HTML = '') {
+  const el = document.querySelector(query);
+  el.render(HTML);
+}
+
+export function replaceAndCommit(query = '', oldHTML = '', newHTML = '') {
+  const els = document.querySelectorAll(query);
+  els.forEach((el) => {
+    const inner = el.innerHTML.replaceAll(oldHTML, newHTML);
+    el.render(inner);
+  })
+};
+
 export function parseToHTML(text = '') {
   return new DOMParser().parseFromString(text, 'text/html');
-}
+};
 
-export function useEvents(events = {}) {
-  const id = uniqueID();
-  _containerOFCocktailEvents_[id] = events;
-  return `cev=${id}`
-}
 
-export function useState(value) {
+export function useRouter(root = '', routes) {
+  const rgx = /\/(\:)?(\w+)?/ig;
+  _CocktailRoutes_ = cloneObject(routes);
+  console.log(_CocktailRoutes_);
 
+  const push = (root = '', routes, route = '') => {
+    history.pushState(null, null, route);
+    $(root).render(isFunction(routes[route]) ? routes[route]() : routes[route]);
+  }
+
+  const getAllCa = () => {
+    const routesEls = document.querySelectorAll('c-a');
+    const { pathname } = location;
+    routesEls.forEach((routeEl) => {
+      routeEl.addEventListener('click', () => {
+        let route = routeEl.getAttribute('to');
+        if (!route) { throw new Error(`Route not founded , try to set "to" attribute at "<c-a>" element`) }
+        if (pathname == route) { return };
+        routes['/404'] = !routes[route] && !routes['/404'] ? `404 page not founded..:(` : routes['/404'];
+
+        if (route.match(rgx).length > 1) {
+          Object.keys(routes).forEach(key => {
+            if (key.match(rgx).length <= 1) return;
+            if (key.match(rgx)[0] == route.match(rgx)[0]) {
+              history.pushState(null, null, route);
+              $(root).render(isFunction(routes[key]) ? routes[key]() : routes[key]);
+            }
+          });
+          getAllCa();
+          return;
+        }
+
+        if (!routes[route]) {
+          push(root, routes, '/404');
+          getAllCa();
+          return;
+        }
+        push(root, routes, route)
+        getAllCa();
+      })
+    });
+  }
+  getAllCa();
+
+  function popAndLoadHandler() {
+    const { pathname } = location;
+    routes['/404'] = !routes[pathname] && !routes['/404'] ? `404 page not founded..:(` : routes['/404'];
+    if (pathname.match(rgx).length > 1) {
+      Object.keys(routes).forEach(key => {
+        if (key.match(rgx).length <= 1) return;
+        if (pathname.match(rgx)[0] == key.match(rgx)[0]) {
+          $(root).render(isFunction(routes[key]) ? routes[key]() : routes[key]);
+        } else { $(root).render(isFunction(routes[key]) ? routes[key]() : routes[key]) }
+      });
+      getAllCa();
+      return;
+    };
+
+    routes[pathname] ? $(root).render(isFunction(routes[pathname]) ? routes[pathname]() : routes[pathname]) : $(root).render(routes['/404']);
+    getAllCa();
+  }
+
+  window.addEventListener('popstate', (ev) => {
+    popAndLoadHandler()
+  });
+
+  window.addEventListener('load', () => {
+    popAndLoadHandler()
+  })
+};
+
+export function useParams() {
+  const rgx = /\/(\:)?(\w+)?/ig;
+  const routes = cloneObject(_CocktailRoutes_);
+  const { pathname } = location;
+  const params = {};
+  Object.keys(routes).map(key => {
+    const keyMatchs = key.match(rgx), routeMatches = pathname.match(rgx);
+    if (keyMatchs[0] != routeMatches[0]) return;
+    keyMatchs.forEach((param, i) => {
+      if(i == 0) return; 
+      params[param.replace(/\/(\:)?/ig, '')] = routeMatches[i].replace('/', '');;
+    });
+  });
+  console.log(params);
+  return params;
 }
 
 //set render class 
 export class Render {
-  constructor(element, [...components]) {
+  constructor(element, component) {
     const vDom = document.createElement('template');
-    for (let i = 0; i < components.length; i++) {
-      vDom.innerHTML += components[i]
-    }
-    element.insertAdjacentHTML('beforeend', vDom.innerHTML);
+    if (isObject(component)) {
+      vDom.innerHTML += component.html;
+      if (component.onBeforeMounted) component.onBeforeMounted();
+      element.innerHTML = vDom.innerHTML;
+      if (component.onAfterMounted) component.onAfterMounted();
+    } else { vDom.innerHTML += component; element.innerHTML = vDom.innerHTML; }
+
 
     //excuteAllEvents
     function excuteEvents() {
-      const allEls = document.body.querySelectorAll('[cev]');
+      const allEls = document.body.querySelectorAll('*');
       allEls.forEach((el) => {
-        const events = _containerOFCocktailEvents_[el.getAttribute('cev')];
-        for (const key in events) {
-          el.addEventListener(key, events[key]);
-          el.removeAttribute('cev')
+        const { attributes } = el;
+        for (const attribute of [...attributes]) {
+          if (attribute.name.startsWith('@')) {
+            el.addEventListener(`${attribute.name.replace('@', '')}`, _containerOFCocktailEvents_[el.getAttribute(attribute.name)])
+          }
         }
+
       })
     }
-    excuteEvents()
+    excuteEvents();
   }
 }
 
 /*******************@Start_Element_prototypes ==========================*/
-
 Element.prototype.on = function (type = "string", callback = () => { }) {
   this.addEventListener(type, callback)
 }
 
+Element.prototype.render = function (component) {
+  new Render(this, component);
 
-Element.prototype.render = function (...components) {
-  return new Render(this, components)
 }
-
-Element.prototype.changeContentWith = function (element) {
-  this.innerHTML = '';
-  this.render(element)
-}
-
 /*******************@End_Element_prototypes ==========================*/
-
-
-
 
 /*******************@Start_Array_prototypes ==========================*/
 Array.prototype.at = function (num) {
@@ -312,38 +383,11 @@ Array.prototype.remove = function (...num) {
 /*******************@End_Array_prototypes ==========================*/
 
 /*******************@Start_functions ==========================*/
-export function transformTo(from, to = "string") {
-  if (to == 'object' || to == 'Object' || to == 'obj' || to == 'Obj') {
-    return { from }
-  } else if (to == 'number' || to == 'Number') {
-    let matching = /\d+/ig.test(from) ? from.match(/\d+/ig) : undefined;
-    if (matching) { return +matching.join("") }
-
-  } else if (to == 'boolean' || to == 'Boolean') {
-    return Boolean(from)
-  } else if (to == 'string' || to == 'String') {
-    if (typeof from == 'object') {
-      return JSON.stringify(from);
-    } else {
-      return String(from);
-    }
-  }
-}
-
-export function switchLang(prop) {
-  if (!prop) throw new Error('prop lang is null')
-  localStorage.setItem('lang', prop)
-  langsElemement.forEach((val, key) => {
-    key.innerHTML = '';
-    key.insertAdjacentHTML('beforeend', val[prop])
-  })
-}
-
-export function random(num) {
+export function random(num = 0) {
   return Math.trunc(Math.random() * num)
 }
 
-export function numCode(length) {
+export function OTP(length = 0) {
   const code = []
   for (let i = 0; i < length; i++) {
     code.push(random(10))
@@ -352,17 +396,8 @@ export function numCode(length) {
 }
 
 export function uniqueID() {
-  const letters = [
-    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
-    "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-    "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
-  ];
-
-  const l = letters.length;
-  return (random(10) + letters.at(random(l)) + random(10) + letters.at(random(l)) + random(10) + letters.at(random(l)) + random(7) + letters.at(random(l)) + random(10) + letters.at(random(l)) + random(10) + letters.at(random(l)) + random(10) + letters.at(random(l)) + random(10) + letters.at(random(l)) + random(10) + letters.at(random(l)) + random(10) + letters.at(random(l)) + random(10) + letters.at(random(l)))
+  return crypto.randomUUID();
 }
-
 
 export function scrollTo(element) {
   if (element.id) {
@@ -374,27 +409,34 @@ export function scrollTo(element) {
   }
 }
 
+export function scrollToRoot(id = '') {
+  location.href = `#${id}`
+}
+
 export function onMobile(cb = function () { }) {
   if (navigator.userAgentData.platform == 'mobile' || navigator.userAgentData.platform == 'Mobile') {
     cb();
   }
 }
 
+export function cloneObject(obj = {}) {
+  const newObj = {};
+  Object.keys(obj).forEach(key => {
+    newObj[key] = obj[key]
+  })
+
+  return newObj;
+}
+
 export function repeatAsArray(data, length) {
-  if (!data) throw new Error('data is null!');
-  if (!length) throw new Error('length is null!');
-  let empArr = [];
-  for (let i = 0; i < length; i++) {
-    empArr.push(data)
-  }
-  return empArr
+  return Array(length).fill(data);
 }
 
 export function copyToClipboard(text) {
   return navigator.clipboard.writeText(text)
 }
 
-export function createFileAs(data, mimeType) {
+export function createBlobFileAs(data, mimeType = '') {
   try {
     return new Blob([data], { type: mimeType });
   } catch (error) {
@@ -421,11 +463,11 @@ export async function log(data) {
   }
 }
 
-export function addClickClass(e) {
+export function addClickClass(e, clickClassName = '') {
   const target = e.currentTarget
-  target.classList.add('click');
+  target.classList.add(clickClassName);
   target.addEventListener('animationend', () => {
-    target.classList.remove('click');
+    target.classList.remove(clickClassName);
   })
 }
 
@@ -451,15 +493,15 @@ export function isFragment(fragment) {
 }
 
 export function isFunction(data) {
-  return data instanceof Function;
+  return typeof data === 'function';
 }
 
 export function isObject(object) {
-  return object instanceof Object
+  return typeof object === "object"
 }
 
 export function isString(string) {
-  return typeof string == typeof ''
+  return typeof string === 'string'
 }
 
 export function isArray(data) {
@@ -476,7 +518,7 @@ export function isUndefined(data) {
 
 
 //send to server
-export async function post({ url, data = {}, json = false, headers = { 'content-type': 'Application/json' } }) {
+export async function post({ url, data = {}, json = true, headers = { 'content-type': 'Application/json' } }) {
   let response = await fetch(url, { method: "POST", headers, body: JSON.stringify(data) });
   return json ? await response.json() : await response.text()
 }
@@ -490,7 +532,7 @@ export async function get({ url, headers, resType = 'json' }) {
   }
 }
 
-export async function put({ url, headers, data }) {
+export async function put({ url, headers = { 'content-type': 'Application/json' }, data }) {
   return await fetch(url, { method: "PUT", headers, body: JSON.stringify(data) })
 }
 
@@ -599,35 +641,18 @@ export function encode(text = "string") {
     "ℜ", "𝒜", "ℬ", "𝒞"
   ];
 
-  let encodedCode = [...encodeURIComponent(text)];
-  let reader = new FileReader(), textEncoder = new TextEncoder().encode(encodedCode.join("")), blob = new Blob(textEncoder);
-  const myData = new Promise((res, rej) => {
-    reader.readAsBinaryString(blob);
-    reader.addEventListener('load', () => {
-      if (reader.result) {
-        const firstChar = reader.result.slice(0, 3), middleChar = reader.result[Math.trunc(reader.result.length / 2)], lastChar = reader.result.slice(-5);
-        const yS7 = (+firstChar + +middleChar + +lastChar) * 700;
-        let dataArray = [...yS7.toString()];
+  const encodedCode = [...encodeURIComponent(text)];
+  const textEncoder = new TextEncoder().encode(encodedCode.join(""));
+  const ys7 = textEncoder.reduce((num1, num2) => {
+    return num1 + num2;
+  });
 
-        for (let i = 0; i < dataArray.length; i++) {
-          dataArray[i] += complexChars[i + 1 + i] + complexChars[i + 2 + 3 + i] + complexChars[i + 2 + 3 + 1 + i]
-        }
-        res(dataArray.join("").split(" ").join(""))
-      } else {
-        rej(new Error("Worng Data!"));
-      }
-    })
-  })
-
-  return myData;
+  return btoa(encodeURI(ys7.toString().split('').map((num) => num + complexChars[+num]).join('')))
 };
 
-
-export async function compare({ comparedText = "string", comparedEncodedText = "string", password = "" }) {
-  return await encode(comparedText, password) === comparedEncodedText ? { ok: true, msg: "It is matched" } : { ok: false, msg: "It is not matched" }
+export function compare({ comparedText = "string", comparedEncodedText = "string", password = "" }) {
+  return encode(comparedText, password) === comparedEncodedText ? { ok: true, msg: "It is matched" } : { ok: false, msg: "It is not matched" }
 }
-
-
 
 export class CocktailDB {
   constructor(dbname = "string") {
@@ -805,10 +830,6 @@ export class CocktailDB {
     indexedDB.deleteDatabase(dbname)
   }
 }
-let i = 0;
-
-
-
 
 export class TelegramBot {
   constructor(token = "string", chatId = "string") {
@@ -920,7 +941,6 @@ export class TelegramBot {
     }
   }
 }
-
 
 const cocktail = 'Welcome in cocktail library';
 export default cocktail;
