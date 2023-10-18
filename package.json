@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "new and fast framework to build web components with indexedDB and more fetures ",
   "main": "cocktail.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
