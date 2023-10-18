@@ -73,12 +73,12 @@ export function useMap(array, callback) {
 }
 
 /**
- * Define your callback in event attribut.
+ * Define your callback in event attribute.
  * @param {()=>void} callback 
  * @returns {string}
  */
 export function def(callback) {
-  const id = encode(uniqueID());
+  const id = hash(uniqueID());
   _containerOFCocktailEvents_[id] = callback;
   return id;
 }
@@ -108,7 +108,7 @@ export function insertInEnd(root, component) {
 }
 
 /**
- * If you wannat replace same component
+ * If you wanna replace same component
  * @param {string} root 
  * @param {string} oldHTML 
  * @param {string} newHTML 
