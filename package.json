@@ -1,0 +1,29 @@
+{
+  "name": "cocktailjs",
+  "version": "1.0.0",
+  "description": "new and fast framework to build web components with indexedDB and more fetures ",
+  "main": "cocktail.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YousofSayed/cocktail.js.git"
+  },
+  "keywords": [
+    "cocktail.js",
+    "modern",
+    "web",
+    "components",
+    "framework",
+    "lightweight",
+    "web",
+    "components"
+  ],
+  "author": "Yousef sayed",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/YousofSayed/cocktail.js/issues"
+  },
+  "homepage": "https://github.com/YousofSayed/cocktail.js#readme"
+}
