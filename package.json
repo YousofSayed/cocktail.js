@@ -1,6 +1,6 @@
 {
   "name": "cocktailjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "new and fast framework to build web components with indexedDB and more fetures ",
   "main": "cocktail.js",
   "type": "module",
