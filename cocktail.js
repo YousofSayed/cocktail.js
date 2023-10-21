@@ -147,7 +147,7 @@ export function render(root, component) {
     if (component.onAfterMounted) component.onAfterMounted();
   }
   else { fragment.innerHTML += component; element.innerHTML = fragment.innerHTML; }
-  excuteEvents(`${elementRoot} *`);
+  excuteEvents(`${root} *`);
 }
 
 /**
